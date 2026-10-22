@@ -31,6 +31,8 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeProvider;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -81,8 +83,12 @@ public final class Raid {
             {"Druskininkai", 54.014, 23.982}};
     private static final long REFRESH_MS = 60_000;
     private static final int NEAR_M = 1000;
-    // how long the pill keeps showing the report of a stop judu loaded departures for
-    private static final long HERE_MS = 60_000;
+    // how long the pill keeps a stop's report after judu last asked for its departures, an open stop asks every 10 s
+    private static final long HERE_MS = 20_000;
+    // judu's location button labels, every map screen has the button
+    private static final String[] MAP = {
+            "Rodyti dabartinę vietą", "Vietos prieiga išjungta", "Nustatoma Jūsų vieta", "Centruoti žemėlapį ir sekti Jūsų vietą", "Sekama Jūsų vieta",
+            "Center map to current location", "Location access off", "Locating your position", "Center map and follow your location", "Following your location"};
     private static final int GREEN = 0xFF43A047, RED = 0xFFE53935;
     private static final String STYLE = "https://maps.judu.lt/styles/bright/style.json";
     // libapp.so asks for this instead of STYLE, RaidPatch.kt swaps it in
@@ -102,10 +108,15 @@ public final class Raid {
     private static SharedPreferences prefs;
     private static final List<Report> reports = new ArrayList<>();
     private static final HashMap<String, Object[]> byCity = new HashMap<>();
-    private static boolean started, running;
-    // the report at the stop judu last loaded departures for
+    private static boolean started, running, watching;
+    // the report at the stop judu last loaded departures for, and whether its name made it on screen
     private static Report here;
     private static long hereAt;
+    private static boolean stopSeen;
+    // flutter's semantics nodes, kept by its accessibility bridge
+    private static List<HashMap<?, ?>> trees;
+    private static Object jni;
+    private static final HashMap<Class<?>, List<Field>> texts = new HashMap<>();
 
     static final class Report {
         String id, stopId, stop, next, user, label;
@@ -134,9 +145,14 @@ public final class Raid {
                 serve();
             }
             addPill(a);
+            trees = null;
             if (!running) {
                 running = true;
                 tick();
+            }
+            if (!watching) {
+                watching = true;
+                watch();
             }
         });
     }
@@ -263,16 +279,113 @@ public final class Raid {
             for (Report r : parse(rows("Vilnius"), null))
                 if (id.equals(r.stopId)) {
                     main.post(() -> {
+                        // the same report polled again keeps its state, a new one has to show up on screen first
+                        if (here == null || !here.id.equals(r.id)) stopSeen = false;
                         here = r;
                         hereAt = System.currentTimeMillis();
                         render();
-                        main.postDelayed(Raid::render, HERE_MS);
                     });
                     return;
                 }
         } catch (Throwable t) {
             Log.w(TAG, "stop lookup failed", t);
         }
+    }
+
+    // twice a second. the stop report goes once judu stops showing or polling that stop,
+    // and the pill only shows on a map or with a stop report
+    private static void watch() {
+        Activity a = activity.get();
+        if (a == null || a.isDestroyed()) {
+            watching = false;
+            return;
+        }
+        main.postDelayed(Raid::watch, 500);
+        if (pill == null || a.getWindow().getDecorView().getWindowVisibility() != View.VISIBLE) return;
+        String screen = screen(a);
+        if (here != null && screen != null && screen.contains(here.stop)) stopSeen = true;
+        if (here != null && (!fresh() || stopSeen && screen != null && !screen.contains(here.stop))) {
+            here = null;
+            render();
+        }
+        // no tree to read, keep it like before
+        boolean show = screen == null || here != null;
+        for (String m : MAP) show = show || screen.contains(m);
+        if (show != (pill.getVisibility() == View.VISIBLE)) Log.d(TAG, "pill " + (show ? "shown" : "hidden") + ", " + (screen == null ? "no tree" : screen.length() + " chars"));
+        pill.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    // every text flutter has on screen, null if its semantics can't be read
+    private static String screen(Activity a) {
+        try {
+            if (trees == null) trees = trees(a.getWindow().getDecorView());
+            if (trees == null) return null;
+            StringBuilder b = new StringBuilder();
+            for (HashMap<?, ?> m : trees)
+                for (Object node : m.values())
+                    for (Field f : texts(node.getClass())) b.append(f.get(node)).append('\n');
+            if (b.length() > 0) return b.toString();
+            // the bridge switches them off again whenever an accessibility service goes away
+            semantics();
+            return null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    // the flutter view holds the accessibility bridge, flutter only builds semantics while one is on,
+    // so they get switched on through FlutterJNI two fields down the bridge
+    private static List<HashMap<?, ?>> trees(View v) throws Exception {
+        if (v instanceof ViewGroup) for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++) {
+            List<HashMap<?, ?>> t = trees(((ViewGroup) v).getChildAt(i));
+            if (t != null) return t;
+        }
+        if (!app(v)) return null;
+        for (Field f : v.getClass().getDeclaredFields()) {
+            if (!AccessibilityNodeProvider.class.isAssignableFrom(f.getType())) continue;
+            f.setAccessible(true);
+            Object bridge = f.get(v);
+            if (bridge == null) continue;
+            List<HashMap<?, ?>> maps = new ArrayList<>();
+            jni = null;
+            for (Field g : bridge.getClass().getDeclaredFields()) {
+                g.setAccessible(true);
+                Object o = g.get(bridge);
+                if (o instanceof HashMap) maps.add((HashMap<?, ?>) o);
+                else if (o != null && app(o)) for (Field h : o.getClass().getDeclaredFields()) {
+                    h.setAccessible(true);
+                    Object x = h.get(o);
+                    if (x != null && x.getClass().getName().equals("io.flutter.embedding.engine.FlutterJNI")) jni = x;
+                }
+            }
+            if (jni == null) continue;
+            semantics();
+            Log.d(TAG, "semantics on, " + maps.size() + " trees");
+            return maps;
+        }
+        return null;
+    }
+
+    private static void semantics() throws Exception {
+        jni.getClass().getMethod("setSemanticsEnabled", boolean.class).invoke(jni, true);
+    }
+
+    // framework classes hide their fields, only judu's own get looked into
+    private static boolean app(Object o) {
+        return o.getClass().getClassLoader() != View.class.getClassLoader();
+    }
+
+    private static List<Field> texts(Class<?> c) {
+        List<Field> l = texts.get(c);
+        if (l != null) return l;
+        l = new ArrayList<>();
+        for (Field f : c.getDeclaredFields())
+            if (f.getType() == String.class) {
+                f.setAccessible(true);
+                l.add(f);
+            }
+        texts.put(c, l);
+        return l;
     }
 
     private static AlertDialog.Builder dialog(Activity a) {
