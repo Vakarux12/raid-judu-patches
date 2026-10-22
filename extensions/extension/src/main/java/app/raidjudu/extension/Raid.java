@@ -1,0 +1,504 @@
+package app.raidjudu.extension;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.Signature;
+import android.content.pm.SigningInfo;
+import android.graphics.drawable.GradientDrawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Base64;
+import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewConfiguration;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
+import java.security.cert.CertificateFactory;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
+
+@SuppressWarnings("unused")
+public final class Raid {
+    private static final String TAG = "raid";
+    private static final String PKG = "com.judu";
+    // judu's play signing cert, google keys (firebase, sign in) are pinned to it
+    private static final String CERT = "MIIFiDCCA3CgAwIBAgIUN0LaltgPQd+coP6M+tfRftcLwoQwDQYJKoZIhvcNAQELBQAwdDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxFDASBgNVBAoTC0dvb2dsZSBJbmMuMRAwDgYDVQQLEwdBbmRyb2lkMRAwDgYDVQQDEwdBbmRyb2lkMCAXDTI0MDcxNjEzMDQ0MVoYDzIwNTQwNzE2MTMwNDQxWjB0MQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLR29vZ2xlIEluYy4xEDAOBgNVBAsTB0FuZHJvaWQxEDAOBgNVBAMTB0FuZHJvaWQwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCOG5/a+3gvUPuPCkDAzak8AqDpgjHNsHnfZq8OSHxxbJJM6VJ3Sxm6LP1xugbtGF8OrXpCVjAGWl9YwEftZI4J+RYKdfkzEE9p2kYq6PFX6K/u3mYyNXYYAkWzE5//TqOfYxmDiTFRmBtt3y5BWDAJvzdIfj9sHjn1GFgd4+u6nca8Cr7bXoCLlI/3pdmTvQXrLW+/R2AW5Gv8nifZb7xQdlqFGpxUaqLzkIt2mCNfI88Tpt2BD5EYk7UjLZlLbYyw/payGYnQBY/fDM3ejOCXdmSgh3PkmKYQdALFlXxVpS8YCRFskZAe+Yw80jz9CFZPHD01L0Uyj15pTe8J5awsvxT+dALKdzYmRuBRb/q7fjvKmFY12FYQlE3xzWx87lVulXOo6wo7hE+iSAOU/BbFT+WFBzAEd+aqH13+5xJVLn/2HoYQMWsw3xWWsk0lrAnL/u5NgOMszrCK5MTA4AKPDsuP5iPEIpr3T/eHE0uawLViGNZVgYtOmMMbt2Sy9vDrJUP23V5WlmEu38ryjT9DkhsFddg06JKIA9VVHmCAlfm8KmIsWgan8ppAhuGmfv0J2mghLfDAR2MaZwJ4PNC7MePrLt+covCzzzE6JkuUL9mCz9j17Me+U0XN5JtFm8oz6js/M6j+m3fX1GNXOjPtepk6SizZvYai38RL5QnALQIDAQABoxAwDjAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4ICAQAKgC/AiDdKBbxy/JOTbKBkQk3D/LNn3o0k3lVXYBpeReG77bZ5h1LvYYuskT6ZO1QmB7kPxzjym5827dd/Lz85+CBcUmdLbH8Uswup3LRWMAOWHxIkkU9tR6vQYZ96C5CV9Tu3euiqfO6VrcnmZlTu7+2YjJv40ntyZSgDBWX27aXf2u1RGa+NXKUEnISbw7JdeeaMRWddLBpW1MpPYTHd7nrAVfSBHmtVAQAqn30/v4puL9Lq3sOjPzVUJ2GM0FkQhC2TybovjPxmaMkgoHnMEDITirafU/ZkQ/4kWCGsNWdQuteS3qaAT2fdoRfZ1JlwuHmqv26z5GTnLY4mcmg45eXjVrL6qF4SgdFtS9DXtg4A86wubiaidbRXb53KYi8w8SimfOKVEEJX2sajN2T6/JfngcmxSq9t6fzYPX7Wo2sPy6rlKPwY2667+tMqW1yy1O2jjGEi+QEYE6Oy4WVRFmQh+L5a/RjZ81DJn9pSH9slgaHqq9JLxnR2Zpguv2IN39ouiEdNy1kCKKn+XYQ6tzGzreVcxvq4Jthg0g3MDjUYc8Wt0UoVDPjC9bKDqi/gBlvwNYwRs2k4Yn0ZmmyTMRAVOGagAawun4KJuu1BKU66BaUYcDWxr48zaMCyFyi03oTnh3caeYzlw0MDHRjHbA2iggj692a0xSzLxHA8tw==";
+    private static final String QUERY = "https://firestore.googleapis.com/v1/projects/raid-lt-live/databases/(default)/documents:runQuery?key=AIzaSyBkzYFg-ETAUecP_Rq_0xOIzexFfGjUj0Q";
+    private static final Object[][] CITIES = {
+            {"Vilnius", 54.683, 25.283}, {"Kaunas", 54.898, 23.906}, {"Klaipėda", 55.703, 21.144},
+            {"Panevėžys", 55.735, 24.357}, {"Šiauliai", 55.935, 23.314}, {"Alytus", 54.396, 24.046},
+            {"Druskininkai", 54.014, 23.982}};
+    private static final long REFRESH_MS = 60_000;
+    private static final int NEAR_M = 1000;
+    private static final String STYLE = "https://maps.judu.lt/styles/bright/style.json";
+    // libapp.so asks for this instead of STYLE, RaidPatch.kt swaps it in
+    private static final String LOCAL_STYLE = "http://127.0.0.1:47123/styles/bright/style.js";
+    private static final int PORT = 47123;
+    private static final String DOT = "{\"id\":\"raid-dot\",\"type\":\"circle\",\"source\":\"raid\",\"source-layer\":\"raid\","
+            + "\"paint\":{\"circle-radius\":7,\"circle-color\":\"#d32f2f\",\"circle-stroke-color\":\"#ffffff\",\"circle-stroke-width\":2}}";
+    private static final String LABEL = "{\"id\":\"raid-label\",\"type\":\"symbol\",\"source\":\"raid\",\"source-layer\":\"raid\","
+            + "\"layout\":{\"text-field\":\"{label}\",\"text-font\":[\"Noto Sans Bold\"],\"text-size\":12,\"text-anchor\":\"top\",\"text-offset\":[0,0.7],\"text-allow-overlap\":true},"
+            + "\"paint\":{\"text-color\":\"#b71c1c\",\"text-halo-color\":\"#ffffff\",\"text-halo-width\":2}}";
+
+    private static final Handler main = new Handler(Looper.getMainLooper());
+    private static WeakReference<Activity> activity = new WeakReference<>(null);
+    private static TextView pill;
+    private static SharedPreferences prefs;
+    private static final List<Report> reports = new ArrayList<>();
+    private static final HashMap<String, Object[]> byCity = new HashMap<>();
+    private static boolean started, running;
+
+    static final class Report {
+        String stop, next, label;
+        double lat, lng;
+        long ageMin, plus, minus;
+        float dist = -1;
+    }
+
+    // runs at the end of MainActivity.<init>, onCreate and onResume are done by the time the post runs
+    public static void attach(Activity a) {
+        if (!started) spoofSignature();
+        activity = new WeakReference<>(a);
+        // queued ahead of the engine's first platform calls, so the server is up before dart asks for the style
+        main.post(() -> {
+            if (!started) {
+                started = true;
+                prefs = a.getSharedPreferences("raid", 0);
+                blockStyleCache(a);
+                serve();
+            }
+            addPill(a);
+            if (!running) {
+                running = true;
+                tick();
+            }
+        });
+    }
+
+    private static void addPill(Activity a) {
+        TextView t = new TextView(a);
+        float dp = a.getResources().getDisplayMetrics().density;
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        t.setTextColor(0xFFFFFFFF);
+        t.setPadding((int) (12 * dp), (int) (6 * dp), (int) (12 * dp), (int) (6 * dp));
+        t.setElevation(6 * dp);
+        t.setText("Kontrolė: …");
+        t.setOnClickListener(v -> list(a));
+        int top = 0;
+        int id = a.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (id != 0) top = a.getResources().getDimensionPixelSize(id);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        lp.topMargin = top + (int) (4 * dp);
+        a.addContentView(t, lp);
+        pill = t;
+        paint(false);
+        draggable(t);
+    }
+
+    // drag it off whatever it covers, the spot sticks across launches
+    private static void draggable(TextView t) {
+        t.setTranslationX(prefs.getFloat("x", 0));
+        t.setTranslationY(prefs.getFloat("y", 0));
+        int slop = ViewConfiguration.get(t.getContext()).getScaledTouchSlop();
+        float[] start = new float[4];
+        boolean[] dragged = {false};
+        t.setOnTouchListener((v, e) -> {
+            switch (e.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    start[0] = e.getRawX();
+                    start[1] = e.getRawY();
+                    start[2] = v.getTranslationX();
+                    start[3] = v.getTranslationY();
+                    dragged[0] = false;
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float dx = e.getRawX() - start[0], dy = e.getRawY() - start[1];
+                    if (Math.hypot(dx, dy) > slop) dragged[0] = true;
+                    if (dragged[0]) {
+                        v.setTranslationX(start[2] + dx);
+                        v.setTranslationY(start[3] + dy);
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (dragged[0]) prefs.edit().putFloat("x", v.getTranslationX()).putFloat("y", v.getTranslationY()).apply();
+                    else v.performClick();
+                    return true;
+            }
+            return false;
+        });
+    }
+
+    private static void paint(boolean near) {
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(999);
+        bg.setColor(near ? 0xF0D32F2F : 0xE0303030);
+        pill.setBackground(bg);
+    }
+
+    private static void tick() {
+        Activity a = activity.get();
+        if (a == null || a.isDestroyed()) {
+            running = false;
+            return;
+        }
+        // in the background (or not drawn yet), look again soon
+        boolean visible = a.getWindow().getDecorView().getWindowVisibility() == View.VISIBLE;
+        main.postDelayed(Raid::tick, visible ? REFRESH_MS : 2000);
+        if (!visible) return;
+        Location me = whereAmI(a);
+        new Thread(() -> {
+            try {
+                List<Report> rows = parse(rows(nearestCity(me)), me);
+                main.post(() -> show(rows));
+            } catch (Throwable t) {
+                Log.w(TAG, "fetch failed", t);
+                main.post(() -> pill.setText("Kontrolė: nėra ryšio"));
+            }
+        }).start();
+    }
+
+    private static void show(List<Report> rows) {
+        reports.clear();
+        reports.addAll(rows);
+        Report first = rows.isEmpty() ? null : rows.get(0);
+        boolean near = first != null && first.dist >= 0 && first.dist < NEAR_M;
+        String text = "Kontrolė: " + rows.size();
+        if (first != null && first.dist >= 0) text += " · artimiausia " + meters(first.dist);
+        pill.setText(text);
+        paint(near);
+    }
+
+    private static void list(Activity a) {
+        boolean dark = (a.getResources().getConfiguration().uiMode & 48) == 32;
+        AlertDialog.Builder b = new AlertDialog.Builder(a, dark
+                ? android.R.style.Theme_DeviceDefault_Dialog_Alert
+                : android.R.style.Theme_DeviceDefault_Light_Dialog_Alert)
+                .setTitle("raid.lt kontrolė")
+                .setPositiveButton("Gerai", null);
+        if (reports.isEmpty()) b.setMessage("Šiuo metu pranešimų nėra.");
+        else {
+            CharSequence[] items = new CharSequence[reports.size()];
+            for (int i = 0; i < items.length; i++) {
+                Report r = reports.get(i);
+                items[i] = r.stop + " → " + r.next + "\n"
+                        + (r.dist >= 0 ? meters(r.dist) + " · " : "")
+                        + "prieš " + r.ageMin + " min · +" + r.plus + " / -" + r.minus;
+            }
+            b.setItems(items, null);
+        }
+        b.show();
+    }
+
+    static String meters(float d) {
+        return d < 1000 ? Math.round(d / 10) * 10 + " m" : String.format(Locale.US, "%.1f km", d / 1000);
+    }
+
+    // judu already holds the location permission, take whatever fix is freshest
+    private static Location whereAmI(Activity a) {
+        Location best = null;
+        try {
+            LocationManager lm = (LocationManager) a.getSystemService(Activity.LOCATION_SERVICE);
+            for (String p : lm.getProviders(true)) {
+                Location l = lm.getLastKnownLocation(p);
+                if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
+            }
+            // no cached fix yet, ask for one so the next tick has it
+            if (best == null) for (String p : lm.getProviders(true))
+                lm.requestSingleUpdate(p, new LocationListener() {
+                    public void onLocationChanged(Location l) {
+                    }
+
+                    public void onStatusChanged(String p, int s, Bundle b) {
+                    }
+
+                    public void onProviderEnabled(String p) {
+                    }
+
+                    public void onProviderDisabled(String p) {
+                    }
+                }, Looper.getMainLooper());
+        } catch (SecurityException ignored) {
+        }
+        return best;
+    }
+
+    static String nearestCity(Location me) {
+        return me == null ? "Vilnius" : nearestCity(me.getLatitude(), me.getLongitude());
+    }
+
+    static String nearestCity(double lat, double lng) {
+        Object[] best = CITIES[0];
+        double bestD = Double.MAX_VALUE;
+        for (Object[] c : CITIES) {
+            double d = Math.pow((double) c[1] - lat, 2) + Math.pow(((double) c[2] - lng) * 0.58, 2);
+            if (d < bestD) {
+                bestD = d;
+                best = c;
+            }
+        }
+        return (String) best[0];
+    }
+
+    static List<Report> parse(JSONArray rows, Location me) throws Exception {
+        List<Report> out = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        float[] d = new float[1];
+        SimpleDateFormat hhmm = new SimpleDateFormat("HH:mm", Locale.US);
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject doc = rows.getJSONObject(i).optJSONObject("document");
+            if (doc == null) continue;
+            JSONObject f = doc.getJSONObject("fields");
+            Report r = new Report();
+            r.stop = str(f, "stopName");
+            r.next = str(f, "nextStopName");
+            r.lat = num(f, "lat");
+            r.lng = num(f, "long");
+            long at = ts(f, "updateTs");
+            r.ageMin = Math.max(0, (now - at) / 60_000);
+            // the time, not the age, a tile keeps it for the whole session
+            r.label = "Kontrolė " + hhmm.format(new Date(at));
+            r.plus = (long) num(f, "agregPointsFor");
+            r.minus = (long) num(f, "agregPointsAgainst");
+            if (me != null) {
+                Location.distanceBetween(me.getLatitude(), me.getLongitude(), r.lat, r.lng, d);
+                r.dist = d[0];
+            }
+            out.add(r);
+        }
+        // nearest first when we know where we are, the query already gives newest first otherwise
+        if (me != null) Collections.sort(out, (x, y) -> Float.compare(x.dist, y.dist));
+        return out;
+    }
+
+    // the pill and every map tile of a city share one fetch a minute
+    static synchronized JSONArray rows(String city) throws Exception {
+        Object[] hit = byCity.get(city);
+        if (hit != null && System.currentTimeMillis() - (long) hit[0] < REFRESH_MS - 10_000) return (JSONArray) hit[1];
+        JSONArray rows = fetch(city);
+        byCity.put(city, new Object[]{System.currentTimeMillis(), rows});
+        return rows;
+    }
+
+    static JSONArray fetch(String city) throws Exception {
+        String q = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"inspectorPosts\"}],"
+                + "\"where\":{\"compositeFilter\":{\"op\":\"AND\",\"filters\":["
+                + "{\"fieldFilter\":{\"field\":{\"fieldPath\":\"city\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":" + JSONObject.quote(city) + "}}},"
+                + "{\"fieldFilter\":{\"field\":{\"fieldPath\":\"isValid\"},\"op\":\"EQUAL\",\"value\":{\"booleanValue\":true}}},"
+                + "{\"fieldFilter\":{\"field\":{\"fieldPath\":\"isDeleted\"},\"op\":\"EQUAL\",\"value\":{\"booleanValue\":false}}}]}},"
+                + "\"orderBy\":[{\"field\":{\"fieldPath\":\"updateTs\"},\"direction\":\"DESCENDING\"}],\"limit\":50}}";
+        HttpURLConnection c = (HttpURLConnection) new URL(QUERY).openConnection();
+        c.setConnectTimeout(10_000);
+        c.setReadTimeout(10_000);
+        c.setDoOutput(true);
+        c.setRequestProperty("content-type", "application/json");
+        try (OutputStream o = c.getOutputStream()) {
+            o.write(q.getBytes(StandardCharsets.UTF_8));
+        }
+        return new JSONArray(read(c));
+    }
+
+    static String read(HttpURLConnection c) throws Exception {
+        try (InputStream in = c.getInputStream()) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] b = new byte[8192];
+            for (int n; (n = in.read(b)) > 0; ) out.write(b, 0, n);
+            return out.toString("UTF-8");
+        } finally {
+            c.disconnect();
+        }
+    }
+
+    // dart keeps the style 12 h, that would pin one tile url and with it old reports.
+    // a directory where its cache file goes makes the write fail, so every map load asks again
+    private static void blockStyleCache(Context c) {
+        File f = new File(c.getFilesDir(), "flutter_map_vector_tiles/style/" + fnv1a(LOCAL_STYLE) + ".bin");
+        if (f.isFile()) f.delete();
+        f.mkdirs();
+    }
+
+    // flutter_map_vector_tiles names cache files like this, dart's signed hex included
+    static String fnv1a(String s) {
+        long h = 0xcbf29ce484222325L;
+        for (int i = 0; i < s.length(); i++) {
+            h ^= s.charAt(i);
+            h *= 0x100000001b3L;
+        }
+        StringBuilder b = new StringBuilder(Long.toString(h, 16));
+        while (b.length() < 16) b.insert(0, '0');
+        return b.toString();
+    }
+
+    // judu's style plus a raid layer, and the raid tiles, for dart on 127.0.0.1
+    private static void serve() {
+        ServerSocket server;
+        try {
+            server = new ServerSocket(PORT, 50, InetAddress.getByName("127.0.0.1"));
+        } catch (Exception e) {
+            Log.e(TAG, "no local map server", e);
+            return;
+        }
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Socket s = server.accept();
+                    new Thread(() -> answer(s)).start();
+                } catch (Exception e) {
+                    Log.w(TAG, "accept failed", e);
+                }
+            }
+        }).start();
+    }
+
+    private static void answer(Socket s) {
+        try (Socket c = s) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
+            String first = in.readLine();
+            if (first == null) return;
+            for (String h = in.readLine(); h != null && !h.isEmpty(); h = in.readLine()) ;
+            Log.d(TAG, first);
+            String path = first.split(" ")[1];
+            byte[] body = path.startsWith("/raid/") ? tile(path) : style().getBytes(StandardCharsets.UTF_8);
+            String head = (body.length == 0 ? "HTTP/1.1 204 No Content" : "HTTP/1.1 200 OK")
+                    + "\r\ncontent-length: " + body.length + "\r\nconnection: close\r\n\r\n";
+            OutputStream o = c.getOutputStream();
+            o.write(head.getBytes(StandardCharsets.UTF_8));
+            o.write(body);
+        } catch (Throwable t) {
+            Log.w(TAG, "map request failed", t);
+        }
+    }
+
+    private static String style() throws Exception {
+        String up;
+        try {
+            HttpURLConnection c = (HttpURLConnection) new URL(STYLE).openConnection();
+            c.setConnectTimeout(10_000);
+            c.setReadTimeout(10_000);
+            up = read(c);
+            prefs.edit().putString("style", up).apply();
+        } catch (Exception e) {
+            // offline, dart's own copy is blocked so hand it the last one
+            up = prefs.getString("style", null);
+            if (up == null) throw e;
+        }
+        JSONObject style = new JSONObject(up);
+        // a new url per load, so no tile of an older load comes back from dart's tile cache
+        String tiles = "http://127.0.0.1:" + PORT + "/raid/" + System.currentTimeMillis() + "/{z}/{x}/{y}.pbf";
+        // from z11 a tile is small enough to sit in one city
+        style.getJSONObject("sources").put("raid", new JSONObject()
+                .put("type", "vector").put("tiles", new JSONArray().put(tiles)).put("minzoom", 11).put("maxzoom", 14));
+        style.getJSONArray("layers").put(new JSONObject(DOT)).put(new JSONObject(LABEL));
+        return style.toString();
+    }
+
+    // /raid/<load>/<z>/<x>/<y>.pbf
+    private static byte[] tile(String path) throws Exception {
+        String[] p = path.substring(0, path.length() - 4).split("/");
+        int z = Integer.parseInt(p[3]), x = Integer.parseInt(p[4]), y = Integer.parseInt(p[5]);
+        double n = 1 << z;
+        double lng = (x + 0.5) / n * 360 - 180;
+        double lat = Math.toDegrees(Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 0.5) / n))));
+        return Mvt.encode(parse(rows(nearestCity(lat, lng)), null), z, x, y);
+    }
+
+    static double num(JSONObject f, String k) {
+        JSONObject v = f.optJSONObject(k);
+        if (v == null) return 0;
+        return v.has("doubleValue") ? v.optDouble("doubleValue") : v.optDouble("integerValue", 0);
+    }
+
+    static String str(JSONObject f, String k) {
+        JSONObject v = f.optJSONObject(k);
+        return v == null ? "?" : v.optString("stringValue", "?");
+    }
+
+    static long ts(JSONObject f, String k) {
+        JSONObject v = f.optJSONObject(k);
+        if (v == null) return System.currentTimeMillis();
+        try {
+            SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+            fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return fmt.parse(v.getString("timestampValue")).getTime();
+        } catch (Exception e) {
+            return System.currentTimeMillis();
+        }
+    }
+
+    // same trick as raid-trafi, rewrite PackageInfo as it comes out of the parcel
+    private static void spoofSignature() {
+        try {
+            final Signature sig = new Signature(Base64.decode(CERT, 0));
+            final Object info = signingInfo(sig);
+            final Parcelable.Creator<PackageInfo> orig = PackageInfo.CREATOR;
+            Field f = PackageInfo.class.getField("CREATOR");
+            f.setAccessible(true);
+            f.set(null, new Parcelable.Creator<PackageInfo>() {
+                public PackageInfo createFromParcel(Parcel p) {
+                    PackageInfo pi = orig.createFromParcel(p);
+                    if (!PKG.equals(pi.packageName)) return pi;
+                    if (pi.signatures != null) pi.signatures = new Signature[]{sig};
+                    if (pi.signingInfo != null && info != null) pi.signingInfo = (SigningInfo) info;
+                    return pi;
+                }
+
+                public PackageInfo[] newArray(int n) {
+                    return orig.newArray(n);
+                }
+            });
+        } catch (Throwable t) {
+            Log.e(TAG, "signature spoof failed", t);
+        }
+    }
+
+    // public SigningInfo constructor exists from api 35, older androids keep the real signingInfo
+    private static Object signingInfo(Signature sig) {
+        try {
+            PublicKey key = CertificateFactory.getInstance("X.509")
+                    .generateCertificate(new ByteArrayInputStream(sig.toByteArray())).getPublicKey();
+            return SigningInfo.class.getConstructor(int.class, Collection.class, Collection.class, Collection.class)
+                    .newInstance(2, Collections.singletonList(sig), Collections.singletonList(key), null);
+        } catch (Throwable t) {
+            Log.w(TAG, "no SigningInfo constructor", t);
+            return null;
+        }
+    }
+}
