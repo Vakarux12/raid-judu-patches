@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-22T15:17:00",
-  "description": "## 1.0.0 (2026-10-22)\n\n### 🐛 Bug Fixes\n\n* add the patch list markers to the readme ([6dc183c](https://github.com/Vakarux12/raid-judu-patches/commit/6dc183ccc2ec3096e54a9f79f7963af7a380c418))\n* use the expanded patch list marker ([13ba2a1](https://github.com/Vakarux12/raid-judu-patches/commit/13ba2a19c9b362db8b6036c2b9405f81b56d6847))\n\n### ✨ New Features\n\n* raid.lt inspector reports on the judu map ([e4018b6](https://github.com/Vakarux12/raid-judu-patches/commit/e4018b682f5b51be1fefdc4043b1b34ad3e59a55))",
-  "download_url": "https://github.com/Vakarux12/raid-judu-patches/releases/download/v1.0.0/patches-1.0.0.mpp",
+  "created_at": "2026-10-22T15:30:33",
+  "description": "## [1.0.1](https://github.com/Vakarux12/raid-judu-patches/compare/v1.0.0...v1.0.1) (2026-10-22)\n\n### 🐛 Bug Fixes\n\n* patch libapp.so of any abi split, explain where to get the xapk ([da1cbaa](https://github.com/Vakarux12/raid-judu-patches/commit/da1cbaa87591112e526a1baef569830f0e6f148b))",
+  "download_url": "https://github.com/Vakarux12/raid-judu-patches/releases/download/v1.0.1/patches-1.0.1.mpp",
   "signature_download_url": "",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/Vakarux12/raid-judu-patches/compare/v1.0.0...v1.0.1) (2026-10-22)
+
+### 🐛 Bug Fixes
+
+* patch libapp.so of any abi split, explain where to get the xapk ([da1cbaa](https://github.com/Vakarux12/raid-judu-patches/commit/da1cbaa87591112e526a1baef569830f0e6f148b))
+
 ## 1.0.0 (2026-10-22)
 
 ### 🐛 Bug Fixes
