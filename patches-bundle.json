@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-22T16:13:45",
-  "description": "## [1.1.0](https://github.com/Vakarux12/raid-judu-patches/compare/v1.0.1...v1.1.0) (2026-10-22)\n\n### ✨ New Features\n\n* raid.lt report view with votes and comments, opened from judu's stops ([8474286](https://github.com/Vakarux12/raid-judu-patches/commit/8474286dc00a7372d24475b4e2e4a2ac1d23ab30))",
-  "download_url": "https://github.com/Vakarux12/raid-judu-patches/releases/download/v1.1.0/patches-1.1.0.mpp",
+  "created_at": "2026-10-22T16:52:03",
+  "description": "## [1.2.0](https://github.com/Vakarux12/raid-judu-patches/compare/v1.1.0...v1.2.0) (2026-10-22)\n\n### ✨ New Features\n\n* pill only on the map, stop report clears when the stop is left ([00c9a9d](https://github.com/Vakarux12/raid-judu-patches/commit/00c9a9d37c6de02f711d05179e7f236a86c56092))",
+  "download_url": "https://github.com/Vakarux12/raid-judu-patches/releases/download/v1.2.0/patches-1.2.0.mpp",
   "signature_download_url": "",
-  "version": "1.1.0"
+  "version": "1.2.0"
 }

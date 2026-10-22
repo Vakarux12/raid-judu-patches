@@ -26,7 +26,7 @@ server on their way to stops.lt, raid.lt reports carry the same stops.lt stop id
 Also spoofs JUDU's Play signing cert in-app for its Google keys. Google sign-in still won't work on a re-signed build, use email login.
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.1.0](https://github.com/Vakarux12/raid-judu-patches/releases/tag/v1.1.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;1 patches total
+> **[v1.2.0](https://github.com/Vakarux12/raid-judu-patches/releases/tag/v1.2.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;1 patches total
 <details open>
 <summary>📦 JUDU&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
