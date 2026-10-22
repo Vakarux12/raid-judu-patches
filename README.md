@@ -4,6 +4,10 @@ Morphe patch that brings raid.lt ticket inspector reports into the JUDU app.
 
 [Add to Morphe](https://morphe.software/add-source?github=Vakarux12/raid-judu-patches)
 
+Morphe can't find JUDU on its download sites and only offers a Google search. Get the 1.6.0 XAPK from
+[APKPure](https://apkpure.com/judu/com.judu/download/1.6.0) instead, the arm64-v8a variant for any recent phone,
+and pick that file in Morphe. The installed app does not work, Morphe only gets its base apk without the map code.
+
 Reports show on JUDU's own map as red dots labelled with the report time, from zoom 11 in.
 JUDU's map is Dart (flutter_map_vector_tiles), so the patch points the style url in libapp.so at a small
 server inside the app. It serves JUDU's style plus a raid layer, and builds the raid vector tiles from raid.lt.

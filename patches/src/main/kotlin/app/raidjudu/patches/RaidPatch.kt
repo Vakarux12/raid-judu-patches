@@ -21,15 +21,19 @@ object MainActivityInitFingerprint : Fingerprint(
 // same length, the snapshot stores the size in front. Raid.java has the same url
 private val styleUrlPatch = resourcePatch {
     execute {
-        val lib = get("lib/arm64-v8a/libapp.so")
-        val bytes = lib.readBytes()
-        val text = String(bytes, Charsets.ISO_8859_1)
+        // the libs come from the abi split, an installed app or a base apk alone has none
+        val libs = listApkEntries("lib/").filter { it.endsWith("/libapp.so") }
+        if (libs.isEmpty()) throw PatchException("libapp.so not found, patch the full JUDU xapk with its arm64_v8a split, not the installed app or a base apk")
         val from = "https://maps.judu.lt/styles/bright/style.json"
         val to = "http://127.0.0.1:47123/styles/bright/style.js"
-        val at = text.indexOf(from)
-        if (at < 0 || from.length != to.length) throw PatchException("map style url not found in libapp.so")
-        to.toByteArray(Charsets.ISO_8859_1).copyInto(bytes, at)
-        lib.writeBytes(bytes)
+        libs.forEach { path ->
+            val lib = get(path)
+            val bytes = lib.readBytes()
+            val at = String(bytes, Charsets.ISO_8859_1).indexOf(from)
+            if (at < 0 || from.length != to.length) throw PatchException("map style url not found in $path")
+            to.toByteArray(Charsets.ISO_8859_1).copyInto(bytes, at)
+            lib.writeBytes(bytes)
+        }
     }
 }
 
@@ -45,7 +49,7 @@ val raidInspectorsPatch = bytecodePatch(
         Compatibility(
             name = "JUDU",
             packageName = "com.judu",
-            apkFileType = ApkFileType.APKM,
+            apkFileType = ApkFileType.XAPK,
             appIconColor = 0xE30613,
             targets = listOf(AppTarget(version = "1.6.0")),
         )
