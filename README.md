@@ -16,6 +16,11 @@ The dots are fetched each time the map loads its style, a map left open does not
 On top there is a pill with the count of active reports in your city and the nearest one, red when one is
 within 1 km, live every minute. Tap it for the full list sorted by distance, drag it anywhere, the spot is remembered.
 
+Open a stop in JUDU and if raid.lt has a report there, the pill turns red and names it for a minute. Tap it, or a
+report in the list, for the report the way raid.lt shows it, who voted stovi or nestovi and when, then the comments
+with their photos. The patch knows which stop is open because JUDU's departures now pass through the same small
+server on their way to stops.lt, raid.lt reports carry the same stops.lt stop id.
+
 Also spoofs JUDU's Play signing cert in-app for its Google keys. Google sign-in still won't work on a re-signed build, use email login.
 
 <!-- PATCHES_START EXPANDED -->

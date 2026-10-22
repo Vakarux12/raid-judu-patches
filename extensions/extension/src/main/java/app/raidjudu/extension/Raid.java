@@ -3,19 +3,27 @@ package app.raidjudu.extension;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.Signature;
 import android.content.pm.SigningInfo;
+import android.content.res.TypedArray;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.util.Base64;
 import android.util.Log;
 import android.util.TypedValue;
@@ -24,6 +32,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import org.json.JSONArray;
@@ -62,16 +72,23 @@ public final class Raid {
     private static final String PKG = "com.judu";
     // judu's play signing cert, google keys (firebase, sign in) are pinned to it
     private static final String CERT = "MIIFiDCCA3CgAwIBAgIUN0LaltgPQd+coP6M+tfRftcLwoQwDQYJKoZIhvcNAQELBQAwdDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxFDASBgNVBAoTC0dvb2dsZSBJbmMuMRAwDgYDVQQLEwdBbmRyb2lkMRAwDgYDVQQDEwdBbmRyb2lkMCAXDTI0MDcxNjEzMDQ0MVoYDzIwNTQwNzE2MTMwNDQxWjB0MQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLR29vZ2xlIEluYy4xEDAOBgNVBAsTB0FuZHJvaWQxEDAOBgNVBAMTB0FuZHJvaWQwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCOG5/a+3gvUPuPCkDAzak8AqDpgjHNsHnfZq8OSHxxbJJM6VJ3Sxm6LP1xugbtGF8OrXpCVjAGWl9YwEftZI4J+RYKdfkzEE9p2kYq6PFX6K/u3mYyNXYYAkWzE5//TqOfYxmDiTFRmBtt3y5BWDAJvzdIfj9sHjn1GFgd4+u6nca8Cr7bXoCLlI/3pdmTvQXrLW+/R2AW5Gv8nifZb7xQdlqFGpxUaqLzkIt2mCNfI88Tpt2BD5EYk7UjLZlLbYyw/payGYnQBY/fDM3ejOCXdmSgh3PkmKYQdALFlXxVpS8YCRFskZAe+Yw80jz9CFZPHD01L0Uyj15pTe8J5awsvxT+dALKdzYmRuBRb/q7fjvKmFY12FYQlE3xzWx87lVulXOo6wo7hE+iSAOU/BbFT+WFBzAEd+aqH13+5xJVLn/2HoYQMWsw3xWWsk0lrAnL/u5NgOMszrCK5MTA4AKPDsuP5iPEIpr3T/eHE0uawLViGNZVgYtOmMMbt2Sy9vDrJUP23V5WlmEu38ryjT9DkhsFddg06JKIA9VVHmCAlfm8KmIsWgan8ppAhuGmfv0J2mghLfDAR2MaZwJ4PNC7MePrLt+covCzzzE6JkuUL9mCz9j17Me+U0XN5JtFm8oz6js/M6j+m3fX1GNXOjPtepk6SizZvYai38RL5QnALQIDAQABoxAwDjAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4ICAQAKgC/AiDdKBbxy/JOTbKBkQk3D/LNn3o0k3lVXYBpeReG77bZ5h1LvYYuskT6ZO1QmB7kPxzjym5827dd/Lz85+CBcUmdLbH8Uswup3LRWMAOWHxIkkU9tR6vQYZ96C5CV9Tu3euiqfO6VrcnmZlTu7+2YjJv40ntyZSgDBWX27aXf2u1RGa+NXKUEnISbw7JdeeaMRWddLBpW1MpPYTHd7nrAVfSBHmtVAQAqn30/v4puL9Lq3sOjPzVUJ2GM0FkQhC2TybovjPxmaMkgoHnMEDITirafU/ZkQ/4kWCGsNWdQuteS3qaAT2fdoRfZ1JlwuHmqv26z5GTnLY4mcmg45eXjVrL6qF4SgdFtS9DXtg4A86wubiaidbRXb53KYi8w8SimfOKVEEJX2sajN2T6/JfngcmxSq9t6fzYPX7Wo2sPy6rlKPwY2667+tMqW1yy1O2jjGEi+QEYE6Oy4WVRFmQh+L5a/RjZ81DJn9pSH9slgaHqq9JLxnR2Zpguv2IN39ouiEdNy1kCKKn+XYQ6tzGzreVcxvq4Jthg0g3MDjUYc8Wt0UoVDPjC9bKDqi/gBlvwNYwRs2k4Yn0ZmmyTMRAVOGagAawun4KJuu1BKU66BaUYcDWxr48zaMCyFyi03oTnh3caeYzlw0MDHRjHbA2iggj692a0xSzLxHA8tw==";
-    private static final String QUERY = "https://firestore.googleapis.com/v1/projects/raid-lt-live/databases/(default)/documents:runQuery?key=AIzaSyBkzYFg-ETAUecP_Rq_0xOIzexFfGjUj0Q";
+    private static final String DOCS = "https://firestore.googleapis.com/v1/projects/raid-lt-live/databases/(default)/documents";
+    private static final String KEY = "key=AIzaSyBkzYFg-ETAUecP_Rq_0xOIzexFfGjUj0Q";
+    private static final String QUERY = DOCS + ":runQuery?" + KEY;
     private static final Object[][] CITIES = {
             {"Vilnius", 54.683, 25.283}, {"Kaunas", 54.898, 23.906}, {"Klaipėda", 55.703, 21.144},
             {"Panevėžys", 55.735, 24.357}, {"Šiauliai", 55.935, 23.314}, {"Alytus", 54.396, 24.046},
             {"Druskininkai", 54.014, 23.982}};
     private static final long REFRESH_MS = 60_000;
     private static final int NEAR_M = 1000;
+    // how long the pill keeps showing the report of a stop judu loaded departures for
+    private static final long HERE_MS = 60_000;
+    private static final int GREEN = 0xFF43A047, RED = 0xFFE53935;
     private static final String STYLE = "https://maps.judu.lt/styles/bright/style.json";
     // libapp.so asks for this instead of STYLE, RaidPatch.kt swaps it in
     private static final String LOCAL_STYLE = "http://127.0.0.1:47123/styles/bright/style.js";
+    // same for judu's departures, they come to /stops/ and go on to stops.lt
+    private static final String DEPARTURES = "https://www.stops.lt/vilnius/departures2.php";
     private static final int PORT = 47123;
     private static final String DOT = "{\"id\":\"raid-dot\",\"type\":\"circle\",\"source\":\"raid\",\"source-layer\":\"raid\","
             + "\"paint\":{\"circle-radius\":7,\"circle-color\":\"#d32f2f\",\"circle-stroke-color\":\"#ffffff\",\"circle-stroke-width\":2}}";
@@ -86,12 +103,22 @@ public final class Raid {
     private static final List<Report> reports = new ArrayList<>();
     private static final HashMap<String, Object[]> byCity = new HashMap<>();
     private static boolean started, running;
+    // the report at the stop judu last loaded departures for
+    private static Report here;
+    private static long hereAt;
 
     static final class Report {
-        String stop, next, label;
+        String id, stopId, stop, next, user, label;
         double lat, lng;
-        long ageMin, plus, minus;
+        long at, created, ageMin, plus, minus, comments;
         float dist = -1;
+        final List<Vote> votes = new ArrayList<>();
+    }
+
+    static final class Vote {
+        boolean up;
+        String user;
+        long at;
     }
 
     // runs at the end of MainActivity.<init>, onCreate and onResume are done by the time the post runs
@@ -122,7 +149,14 @@ public final class Raid {
         t.setPadding((int) (12 * dp), (int) (6 * dp), (int) (12 * dp), (int) (6 * dp));
         t.setElevation(6 * dp);
         t.setText("Kontrolė: …");
-        t.setOnClickListener(v -> list(a));
+        // long stop names get cut, not the screen edge
+        t.setSingleLine(true);
+        t.setEllipsize(TextUtils.TruncateAt.END);
+        t.setMaxWidth(a.getResources().getDisplayMetrics().widthPixels - (int) (32 * dp));
+        t.setOnClickListener(v -> {
+            if (fresh()) open(a, here);
+            else list(a);
+        });
         int top = 0;
         int id = a.getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (id != 0) top = a.getResources().getDimensionPixelSize(id);
@@ -199,6 +233,21 @@ public final class Raid {
     private static void show(List<Report> rows) {
         reports.clear();
         reports.addAll(rows);
+        render();
+    }
+
+    private static boolean fresh() {
+        return here != null && System.currentTimeMillis() - hereAt < HERE_MS;
+    }
+
+    private static void render() {
+        if (pill == null) return;
+        if (fresh()) {
+            pill.setText("Kontrolė " + hhmm(here.at) + " · ▲" + here.plus + " ▼" + here.minus + " · " + here.stop);
+            paint(true);
+            return;
+        }
+        List<Report> rows = reports;
         Report first = rows.isEmpty() ? null : rows.get(0);
         boolean near = first != null && first.dist >= 0 && first.dist < NEAR_M;
         String text = "Kontrolė: " + rows.size();
@@ -207,25 +256,157 @@ public final class Raid {
         paint(near);
     }
 
-    private static void list(Activity a) {
+    // judu asked stops.lt for this stop's departures, so its stop view (or dashboard) shows it
+    private static void atStop(String id) {
+        if (id == null) return;
+        try {
+            for (Report r : parse(rows("Vilnius"), null))
+                if (id.equals(r.stopId)) {
+                    main.post(() -> {
+                        here = r;
+                        hereAt = System.currentTimeMillis();
+                        render();
+                        main.postDelayed(Raid::render, HERE_MS);
+                    });
+                    return;
+                }
+        } catch (Throwable t) {
+            Log.w(TAG, "stop lookup failed", t);
+        }
+    }
+
+    private static AlertDialog.Builder dialog(Activity a) {
         boolean dark = (a.getResources().getConfiguration().uiMode & 48) == 32;
-        AlertDialog.Builder b = new AlertDialog.Builder(a, dark
+        return new AlertDialog.Builder(a, dark
                 ? android.R.style.Theme_DeviceDefault_Dialog_Alert
                 : android.R.style.Theme_DeviceDefault_Light_Dialog_Alert)
-                .setTitle("raid.lt kontrolė")
                 .setPositiveButton("Gerai", null);
-        if (reports.isEmpty()) b.setMessage("Šiuo metu pranešimų nėra.");
+    }
+
+    private static void list(Activity a) {
+        AlertDialog.Builder b = dialog(a).setTitle("raid.lt kontrolė");
+        // the list can change under an open dialog, taps go to what was shown
+        List<Report> shown = new ArrayList<>(reports);
+        if (shown.isEmpty()) b.setMessage("Šiuo metu pranešimų nėra.");
         else {
-            CharSequence[] items = new CharSequence[reports.size()];
+            CharSequence[] items = new CharSequence[shown.size()];
             for (int i = 0; i < items.length; i++) {
-                Report r = reports.get(i);
+                Report r = shown.get(i);
                 items[i] = r.stop + " → " + r.next + "\n"
                         + (r.dist >= 0 ? meters(r.dist) + " · " : "")
-                        + "prieš " + r.ageMin + " min · +" + r.plus + " / -" + r.minus;
+                        + "prieš " + r.ageMin + " min · ▲" + r.plus + " ▼" + r.minus;
             }
-            b.setItems(items, null);
+            b.setItems(items, (d, i) -> open(a, shown.get(i)));
         }
         b.show();
+    }
+
+    // raid.lt's report page, who voted stovi or nestovi and when, then the comments
+    static void open(Activity a, Report r) {
+        AlertDialog.Builder b = dialog(a).setTitle("Pranešimas");
+        Context c = b.getContext();
+        LinearLayout col = new LinearLayout(c);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setPadding(dp(c, 24), dp(c, 8), dp(c, 24), dp(c, 8));
+        col.addView(text(c, r.stop, 18, true));
+        col.addView(text(c, "Link: " + r.next, 14, false));
+        TextView meta = text(c, "@" + r.user + " · " + hhmm(r.created) + " · atnaujinta prieš " + r.ageMin + " min", 13, false);
+        meta.setAlpha(0.6f);
+        col.addView(meta);
+        SpannableStringBuilder score = new SpannableStringBuilder();
+        span(score, "STOVI " + r.plus, GREEN);
+        score.append("     ");
+        span(score, "NESTOVI " + r.minus, RED);
+        col.addView(header(c, score));
+        // newest first, like raid.lt
+        for (int i = r.votes.size() - 1; i >= 0; i--) {
+            Vote v = r.votes.get(i);
+            col.addView(row(c, v.up ? "▲" : "▼", v.up ? GREEN : RED, v.user, hhmm(v.at)));
+        }
+        col.addView(header(c, "Komentarai (" + r.comments + ")"));
+        TextView wait = text(c, "…", 14, false);
+        col.addView(wait);
+        ScrollView scroll = new ScrollView(c);
+        scroll.addView(col);
+        b.setView(scroll).show();
+        new Thread(() -> {
+            try {
+                JSONArray docs = comments(r.id);
+                main.post(() -> {
+                    col.removeView(wait);
+                    if (docs.length() == 0) col.addView(text(c, "Komentarų nėra", 14, false));
+                    for (int i = 0; i < docs.length(); i++) comment(c, col, docs.optJSONObject(i).optJSONObject("fields"));
+                });
+            } catch (Throwable t) {
+                Log.w(TAG, "comments failed", t);
+                main.post(() -> wait.setText("Nepavyko įkelti komentarų"));
+            }
+        }).start();
+    }
+
+    private static void comment(Context c, LinearLayout col, JSONObject f) {
+        if (f == null) return;
+        TextView who = text(c, str(f, "username") + " · " + hhmm(ts(f, "createTs")), 13, true);
+        who.setPadding(0, dp(c, 8), 0, 0);
+        col.addView(who);
+        String body = f.has("text") ? str(f, "text") : "";
+        if (!body.isEmpty()) col.addView(text(c, body, 14, false));
+        String photo = f.has("photoUrl") ? str(f, "photoUrl") : "";
+        if (photo.isEmpty()) return;
+        TextView link = text(c, "Nuotrauka ↗", 14, false);
+        link.setTextColor(0xFF1E88E5);
+        link.setOnClickListener(v -> {
+            try {
+                c.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(photo)));
+            } catch (Exception ignored) {
+            }
+        });
+        col.addView(link);
+    }
+
+    private static View row(Context c, String mark, int color, String who, String when) {
+        LinearLayout l = new LinearLayout(c);
+        l.setPadding(0, dp(c, 4), 0, dp(c, 4));
+        TextView m = text(c, mark, 14, true);
+        m.setTextColor(color);
+        m.setMinWidth(dp(c, 28));
+        TextView t = text(c, when, 14, false);
+        t.setAlpha(0.6f);
+        l.addView(m);
+        l.addView(text(c, who, 14, false), new LinearLayout.LayoutParams(0, -2, 1));
+        l.addView(t);
+        return l;
+    }
+
+    private static TextView header(Context c, CharSequence s) {
+        TextView t = text(c, s, 16, true);
+        t.setPadding(0, dp(c, 16), 0, dp(c, 4));
+        return t;
+    }
+
+    private static TextView text(Context c, CharSequence s, int sp, boolean bold) {
+        TextView t = new TextView(c);
+        t.setText(s);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        TypedArray fg = c.obtainStyledAttributes(new int[]{android.R.attr.textColorPrimary});
+        t.setTextColor(fg.getColor(0, 0xFF000000));
+        fg.recycle();
+        if (bold) t.setTypeface(Typeface.DEFAULT_BOLD);
+        return t;
+    }
+
+    private static void span(SpannableStringBuilder b, String s, int color) {
+        int start = b.length();
+        b.append(s);
+        b.setSpan(new ForegroundColorSpan(color), start, b.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    private static int dp(Context c, int n) {
+        return (int) (n * c.getResources().getDisplayMetrics().density);
+    }
+
+    static String hhmm(long at) {
+        return new SimpleDateFormat("HH:mm", Locale.US).format(new Date(at));
     }
 
     static String meters(float d) {
@@ -282,22 +463,36 @@ public final class Raid {
         List<Report> out = new ArrayList<>();
         long now = System.currentTimeMillis();
         float[] d = new float[1];
-        SimpleDateFormat hhmm = new SimpleDateFormat("HH:mm", Locale.US);
         for (int i = 0; i < rows.length(); i++) {
             JSONObject doc = rows.getJSONObject(i).optJSONObject("document");
             if (doc == null) continue;
             JSONObject f = doc.getJSONObject("fields");
             Report r = new Report();
+            r.id = doc.getString("name").substring(doc.getString("name").lastIndexOf('/') + 1);
+            r.stopId = str(f, "stopLocationId");
             r.stop = str(f, "stopName");
             r.next = str(f, "nextStopName");
+            r.user = str(f, "username");
             r.lat = num(f, "lat");
             r.lng = num(f, "long");
-            long at = ts(f, "updateTs");
-            r.ageMin = Math.max(0, (now - at) / 60_000);
+            r.at = ts(f, "updateTs");
+            r.created = ts(f, "createTs");
+            r.ageMin = Math.max(0, (now - r.at) / 60_000);
             // the time, not the age, a tile keeps it for the whole session
-            r.label = "Kontrolė " + hhmm.format(new Date(at));
+            r.label = "Kontrolė " + hhmm(r.at);
             r.plus = (long) num(f, "agregPointsFor");
             r.minus = (long) num(f, "agregPointsAgainst");
+            r.comments = (long) num(f, "commentsCount");
+            JSONArray votes = f.optJSONObject("votes") == null ? null
+                    : f.getJSONObject("votes").getJSONObject("arrayValue").optJSONArray("values");
+            for (int j = 0; votes != null && j < votes.length(); j++) {
+                JSONObject vf = votes.getJSONObject(j).getJSONObject("mapValue").getJSONObject("fields");
+                Vote v = new Vote();
+                v.up = num(vf, "vote") > 0;
+                v.user = str(vf, "username");
+                v.at = ts(vf, "createTs");
+                r.votes.add(v);
+            }
             if (me != null) {
                 Location.distanceBetween(me.getLatitude(), me.getLongitude(), r.lat, r.lng, d);
                 r.dist = d[0];
@@ -336,12 +531,25 @@ public final class Raid {
         return new JSONArray(read(c));
     }
 
+    // comments sit in a subcollection, read only when a report is opened. the rules allow 50 a page
+    static JSONArray comments(String id) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(DOCS + "/inspectorPosts/" + id + "/comments?" + KEY + "&orderBy=createTs&pageSize=50").openConnection();
+        c.setConnectTimeout(10_000);
+        c.setReadTimeout(10_000);
+        JSONArray docs = new JSONObject(read(c)).optJSONArray("documents");
+        return docs == null ? new JSONArray() : docs;
+    }
+
     static String read(HttpURLConnection c) throws Exception {
+        return new String(bytes(c), StandardCharsets.UTF_8);
+    }
+
+    static byte[] bytes(HttpURLConnection c) throws Exception {
         try (InputStream in = c.getInputStream()) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] b = new byte[8192];
             for (int n; (n = in.read(b)) > 0; ) out.write(b, 0, n);
-            return out.toString("UTF-8");
+            return out.toByteArray();
         } finally {
             c.disconnect();
         }
@@ -396,12 +604,27 @@ public final class Raid {
             for (String h = in.readLine(); h != null && !h.isEmpty(); h = in.readLine()) ;
             Log.d(TAG, first);
             String path = first.split(" ")[1];
-            byte[] body = path.startsWith("/raid/") ? tile(path) : style().getBytes(StandardCharsets.UTF_8);
+            String type = null;
+            byte[] body;
+            boolean stop = path.startsWith("/stops/");
+            if (path.startsWith("/raid/")) body = tile(path);
+            else if (stop) {
+                int q = path.indexOf('?');
+                HttpURLConnection up = (HttpURLConnection) new URL(DEPARTURES + (q < 0 ? "" : path.substring(q))).openConnection();
+                up.setConnectTimeout(10_000);
+                up.setReadTimeout(10_000);
+                // dart decodes by this charset, without it lithuanian letters break
+                type = up.getContentType();
+                body = bytes(up);
+            } else body = style().getBytes(StandardCharsets.UTF_8);
             String head = (body.length == 0 ? "HTTP/1.1 204 No Content" : "HTTP/1.1 200 OK")
+                    + (type == null ? "" : "\r\ncontent-type: " + type)
                     + "\r\ncontent-length: " + body.length + "\r\nconnection: close\r\n\r\n";
             OutputStream o = c.getOutputStream();
             o.write(head.getBytes(StandardCharsets.UTF_8));
             o.write(body);
+            o.flush();
+            if (stop) atStop(Uri.parse("http://127.0.0.1" + path).getQueryParameter("stopid"));
         } catch (Throwable t) {
             Log.w(TAG, "map request failed", t);
         }

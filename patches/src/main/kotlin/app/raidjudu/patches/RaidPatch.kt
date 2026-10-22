@@ -17,21 +17,26 @@ object MainActivityInitFingerprint : Fingerprint(
     name = "<init>",
 )
 
-// dart loads the map style by this url, send it to the extension's local server instead.
-// same length, the snapshot stores the size in front. Raid.java has the same url
+// dart loads the map style and the stop departures by these urls, send them to the extension's
+// local server instead. same length, the snapshot stores the size in front. Raid.java has the same urls
+private val swaps = mapOf(
+    "https://maps.judu.lt/styles/bright/style.json" to "http://127.0.0.1:47123/styles/bright/style.js",
+    "https://www.stops.lt/vilnius/departures2.php" to "http://127.0.0.1:47123/stops/departures2.php",
+)
+
 private val styleUrlPatch = resourcePatch {
     execute {
         // the libs come from the abi split, an installed app or a base apk alone has none
         val libs = listApkEntries("lib/").filter { it.endsWith("/libapp.so") }
         if (libs.isEmpty()) throw PatchException("libapp.so not found, patch the full JUDU xapk with its arm64_v8a split, not the installed app or a base apk")
-        val from = "https://maps.judu.lt/styles/bright/style.json"
-        val to = "http://127.0.0.1:47123/styles/bright/style.js"
         libs.forEach { path ->
             val lib = get(path)
             val bytes = lib.readBytes()
-            val at = String(bytes, Charsets.ISO_8859_1).indexOf(from)
-            if (at < 0 || from.length != to.length) throw PatchException("map style url not found in $path")
-            to.toByteArray(Charsets.ISO_8859_1).copyInto(bytes, at)
+            swaps.forEach { (from, to) ->
+                val at = String(bytes, Charsets.ISO_8859_1).indexOf(from)
+                if (at < 0 || from.length != to.length) throw PatchException("$from not found in $path")
+                to.toByteArray(Charsets.ISO_8859_1).copyInto(bytes, at)
+            }
             lib.writeBytes(bytes)
         }
     }
@@ -40,7 +45,7 @@ private val styleUrlPatch = resourcePatch {
 @Suppress("unused")
 val raidInspectorsPatch = bytecodePatch(
     name = "raid.lt inspectors",
-    description = "Puts raid.lt ticket inspector reports on the JUDU map, with a counter on top, tap it for the reports sorted by distance.",
+    description = "Puts raid.lt ticket inspector reports on the JUDU map and its stops, with a counter on top. Tap it for the reports with their votes and comments.",
     default = true,
 ) {
     dependsOn(styleUrlPatch)
