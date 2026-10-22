@@ -14,6 +14,9 @@ within 1 km, live every minute. Tap it for the full list sorted by distance, dra
 
 Also spoofs JUDU's Play signing cert in-app for its Google keys. Google sign-in still won't work on a re-signed build, use email login.
 
+<!-- PATCHES_START [EXPANDED] -->
+<!-- PATCHES_END -->
+
 ## Building
 
     echo "sdk.dir=$HOME/Android/Sdk" > local.properties
