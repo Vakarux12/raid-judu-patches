@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/Vakarux12/raid-judu-patches/compare/v1.0.1...v1.1.0) (2026-10-22)
+
+### ✨ New Features
+
+* raid.lt report view with votes and comments, opened from judu's stops ([8474286](https://github.com/Vakarux12/raid-judu-patches/commit/8474286dc00a7372d24475b4e2e4a2ac1d23ab30))
+
 ## [1.0.1](https://github.com/Vakarux12/raid-judu-patches/compare/v1.0.0...v1.0.1) (2026-10-22)
 
 ### 🐛 Bug Fixes

@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-22T15:30:33",
-  "description": "## [1.0.1](https://github.com/Vakarux12/raid-judu-patches/compare/v1.0.0...v1.0.1) (2026-10-22)\n\n### 🐛 Bug Fixes\n\n* patch libapp.so of any abi split, explain where to get the xapk ([da1cbaa](https://github.com/Vakarux12/raid-judu-patches/commit/da1cbaa87591112e526a1baef569830f0e6f148b))",
-  "download_url": "https://github.com/Vakarux12/raid-judu-patches/releases/download/v1.0.1/patches-1.0.1.mpp",
+  "created_at": "2026-10-22T16:13:45",
+  "description": "## [1.1.0](https://github.com/Vakarux12/raid-judu-patches/compare/v1.0.1...v1.1.0) (2026-10-22)\n\n### ✨ New Features\n\n* raid.lt report view with votes and comments, opened from judu's stops ([8474286](https://github.com/Vakarux12/raid-judu-patches/commit/8474286dc00a7372d24475b4e2e4a2ac1d23ab30))",
+  "download_url": "https://github.com/Vakarux12/raid-judu-patches/releases/download/v1.1.0/patches-1.1.0.mpp",
   "signature_download_url": "",
-  "version": "1.0.1"
+  "version": "1.1.0"
 }
